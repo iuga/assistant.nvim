@@ -2,7 +2,7 @@
 
 **assistant.nvim** is a Neovim plugin written in Lua that allows you to chat with language models via [Ollama](https://ollama.com), retaining context between conversations. 
 
-![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/iuga/assistant.nvim/lint-test.yml?branch=main&style=for-the-badge)
+![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/iuga/assistant.nvim/lint-test.yml?branch=main&style=flat)
 
 ## Features
 
