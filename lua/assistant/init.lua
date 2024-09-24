@@ -18,6 +18,7 @@ end
 M.config = M.default_config()
 
 ---@type Table
+---@example [{role = "assistant", message = "..."},...]
 M.history = {}
 
 ---@param args Config?
@@ -45,6 +46,7 @@ function M.choose_model()
 			{ title = "Ollama" }
 		)
 		return
+
 	end
 
 	vim.ui.select(models, {
@@ -71,19 +73,30 @@ function M.chat()
     M.set_bufnr_options(bufrnout)
 
     local on_response = function(body, done)
+        print("on response~>", body, done)
         local ctx = {}
-        print("body~>", body)
         -- Insert all lines from the current buffer content (ctx)
-        for _, line in ipairs(M.history) do
-            table.insert(ctx, line)
+        for _, msg in ipairs(M.history) do
+            for i, l in ipairs(msg.message) do
+                if msg.role == "user" then
+                    table.insert(ctx, "> " .. l)
+                else
+                    table.insert(ctx, l)
+                end
+            end
+            table.insert(ctx, "")
         end
         -- Insert all lines from the response body
-        for _, line in ipairs(body) do
-            table.insert(ctx, line)
+        for i, line in ipairs(body.message) do
+            if body.role == "user" then
+                table.insert(ctx, "> " .. line)
+            else
+                table.insert(ctx, line)
+            end
         end
 
         if done == true then
-            M.add_to_history(body, "")
+            M.add_to_history(body)
         else
             vim.api.nvim_buf_set_lines(bufrnout, 0, -1, false, ctx)
         end
@@ -91,10 +104,11 @@ function M.chat()
 
     local on_submit = function(value)
         print("on_submit", value)
-        M.add_to_history(value, "> ")
+        local message = {role = "user", message = value}
+        M.add_to_history(message)
         M.flush_history(bufrnout)
         local prompt = table.concat(value, "\n")
-        client.generate(M.config, prompt, on_response)
+        client.chat(M.config, M.history, on_response)
     end
 
     ui.open_chat(bufrnout, bufrnin, on_submit) 
@@ -105,25 +119,32 @@ function M.chat()
     
 end
 
-function M.add_to_history(msg, shell)
-    if msg == nil then
-        return
+-- message ~> {role = "assistant", message = "..."} 
+function M.add_to_history(message)
+    print("add to history", message, message.role, table.concat(message.message, " "))
+    if message ~= nil then
+        table.insert(M.history, message)
     end
-    for i, line in ipairs(msg) do
-        print("for", i, "~>", line)
-        if i == 1 then
-            table.insert(M.history, shell .. line)
-        else
-            table.insert(M.history, line)
-        end
-    end
-    table.insert(M.history, "")
 end
 
 function M.flush_history(bufnr)
     local ctx = {}
-    for _, line in ipairs(M.history) do
-        table.insert(ctx, line)
+    for _, msg in ipairs(M.history) do
+        -- print("history entry~>", msg, msg.role, table.concat(msg.message, ""))
+        for _, l in ipairs(msg.message) do
+            if msg.role == "user" then
+                table.insert(ctx, "> " .. l)
+            else
+                table.insert(ctx, l)
+            end
+        end
+        table.insert(ctx, "")
+        -- local lines = {}
+        -- if msg.role == "user" then
+        --     table.insert(ctx, "[user] ~> " .. msg.message)
+        -- else
+        --     table.insert(ctx, "[assistant] ~> " .. msg.message)
+        -- end
     end
     vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, ctx)
 end

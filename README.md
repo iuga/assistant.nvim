@@ -1,47 +1,49 @@
-# A Neovim Plugin Template
+# assistant.nvim
 
-![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/ellisonleao/nvim-plugin-template/lint-test.yml?branch=main&style=for-the-badge)
-![Lua](https://img.shields.io/badge/Made%20with%20Lua-blueviolet.svg?style=for-the-badge&logo=lua)
+**assistant.nvim** is a Neovim plugin written in Lua that allows you to chat with language models via [Ollama](https://ollama.com), retaining context between conversations.
 
-A template repository for Neovim plugins.
+## Features
 
-## Using it
+- Chat with language models directly from Neovim.
+- Retain context across multiple interactions with the model.
+- Flexible and customizable configuration options.
 
-Via `gh`:
+## Requirements
 
+- Neovim 0.5+ (for Lua support)
+- [Ollama](https://ollama.com) 
+
+## Installation
+
+Add the following to your Lazy.nvim plugin list:
+
+```lua
+{
+  "iuga/assistant.nvim",
+  config = function()
+    require("assistant").setup({
+      model = "gemma2:27b"
+    })
+  end
+}
 ```
-$ gh repo create my-plugin -p ellisonleao/nvim-plugin-template
+## Usage
+
+To select the model to use:
+```
+:AssistantChooseModel
 ```
 
-Via github web page:
-
-Click on `Use this template`
-
-![](https://docs.github.com/assets/cb-36544/images/help/repository/use-this-template-button.png)
-
-## Features and structure
-
-- 100% Lua
-- Github actions for:
-  - running tests using [plenary.nvim](https://github.com/nvim-lua/plenary.nvim) and [busted](https://olivinelabs.com/busted/)
-  - check for formatting errors (Stylua)
-  - vimdocs autogeneration from README.md file
-  - luarocks release (LUAROCKS_API_KEY secret configuration required)
-
-### Plugin structure
-
+Then, to start a conversation with the model, run the following command inside Neovim:
 ```
-.
-├── lua
-│   ├── plugin_name
-│   │   └── module.lua
-│   └── plugin_name.lua
-├── Makefile
-├── plugin
-│   └── plugin_name.lua
-├── README.md
-├── tests
-│   ├── minimal_init.lua
-│   └── plugin_name
-│       └── plugin_name_spec.lua
+:AssistantChat
 ```
+For further commands and customization options, check the documentation in the plugin.
+
+## Contributing
+
+Feel free to submit issues, feature requests, or pull requests on GitHub.
+
+## License
+
+This project is licensed under the MIT License. See LICENSE for more details.

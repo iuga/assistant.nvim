@@ -21,6 +21,46 @@ function M.query_models(cfg)
 	return models
 end
 
+function M.chat(cfg, history, on_response)
+    print("chat", cfg, input, on_response)
+
+    local message = {role = "assistant", message = ""}
+    local tokens = {}
+    local cb = function(body, job)
+        if job == nil and _job ~= nil then
+            job:shutdown()
+        end
+        table.insert(tokens, body.message.content)
+        message.message = vim.split(table.concat(tokens), "\n")
+        on_response(message, body.done)
+    end
+    
+    -- TODO: Implement retention ( only last X messages )
+    local messages = {}
+    -- Iterate over the history table
+    for i, content in ipairs(history) do
+        table.insert(messages, {
+            role = content.role,
+            content = table.concat(content.message, "\n")
+        })
+    end
+
+    local body =vim.json.encode({
+        model = cfg.model,
+        messages = messages,
+        stream = true,
+    }) 
+    print("body~>", body)
+
+    local job = require("plenary.curl").post(cfg.url .. "/api/chat", {
+        body = body,
+        stream = function(err, chunk, job)
+            M.handle_stream(cb)(err, chunk, job)
+        end,
+    }) 
+
+end
+
 function M.generate(cfg, input, on_response)
     print("generate", cfg, input, on_response)
     local tokens = {}
@@ -57,17 +97,18 @@ end
 function M.handle_stream(cb)
 	---@param job Job?
 	return function(_, chunk, job)
-        print("handle_stream", _, chunk, job)
+        -- print("handle_stream", _, chunk, job)
 		vim.schedule(function()
 			local _, body = pcall(function()
 				return vim.json.decode(chunk)
 			end)
-			if type(body) ~= "table" or body.response == nil then
+			if type(body) ~= "table" or body.message == nil then
 				if body.error ~= nil then
 					vim.api.nvim_notify("Error: " .. body.error, vim.log.levels.ERROR, { title = "Ollama" })
 				end
 				return
 			end
+            -- vim.notify("cb()")
 			cb(body, job)
 		end)
 	end
