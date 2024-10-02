@@ -2,6 +2,9 @@
 local client = require("assistant.client")
 local ui = require("assistant.ui")
 
+-- Deprecate
+local NuiText = require("nui.text")
+
 ---@class MyModule
 local M = {}
 
@@ -73,26 +76,13 @@ function M.chat()
     M.set_bufnr_options(bufrnout)
 
     local on_response = function(body, done)
-        print("on response~>", body, done)
+        print("on response~>", body, body.role, body.message, done)
         local ctx = {}
         -- Insert all lines from the current buffer content (ctx)
-        for _, msg in ipairs(M.history) do
-            for i, l in ipairs(msg.message) do
-                if msg.role == "user" then
-                    table.insert(ctx, "> " .. l)
-                else
-                    table.insert(ctx, l)
-                end
-            end
-            table.insert(ctx, "")
-        end
+        ctx = ui.format_conversation(M.history) 
         -- Insert all lines from the response body
-        for i, line in ipairs(body.message) do
-            if body.role == "user" then
-                table.insert(ctx, "> " .. line)
-            else
-                table.insert(ctx, line)
-            end
+        for i, line in ipairs(ui.format_message(body)) do
+            table.insert(ctx, line)
         end
 
         if done == true then
@@ -100,6 +90,9 @@ function M.chat()
         else
             vim.api.nvim_buf_set_lines(bufrnout, 0, -1, false, ctx)
         end
+
+        ui.highlight(bufrnout)
+
     end
 
     local on_submit = function(value)
@@ -128,24 +121,7 @@ function M.add_to_history(message)
 end
 
 function M.flush_history(bufnr)
-    local ctx = {}
-    for _, msg in ipairs(M.history) do
-        -- print("history entry~>", msg, msg.role, table.concat(msg.message, ""))
-        for _, l in ipairs(msg.message) do
-            if msg.role == "user" then
-                table.insert(ctx, "> " .. l)
-            else
-                table.insert(ctx, l)
-            end
-        end
-        table.insert(ctx, "")
-        -- local lines = {}
-        -- if msg.role == "user" then
-        --     table.insert(ctx, "[user] ~> " .. msg.message)
-        -- else
-        --     table.insert(ctx, "[assistant] ~> " .. msg.message)
-        -- end
-    end
+    local ctx = ui.format_conversation(M.history)
     vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, ctx)
 end
 

@@ -4,6 +4,21 @@ local Input = require("nui.input")
 local Text = require("nui.text")
 local event = require("nui.utils.autocmd").event
 
+local chars = {
+  first = '┍',
+  mid = '│',
+  last = '┕',
+  single = '╺',
+}
+
+local colors = {
+    user = "#E4609B",
+    assistant = "#47BAC0"
+}
+local colors_cache = {} --- @type table<integer,string>
+
+local ns = vim.api.nvim_create_namespace('assistant_blocks')
+
 ---@class UI
 local M = {}
 
@@ -98,6 +113,85 @@ function M.is_message_empty(msg)
     end
 
     return true  -- All msg are empty
+end
+
+function M.format_conversation(history)
+    local ctx = {}
+    for _, msg in ipairs(history) do
+        local fmsg = M.format_message(msg)
+        for x, l in ipairs(fmsg) do
+            table.insert(ctx,  l)
+        end
+    end
+    return ctx
+end
+
+function M.format_message(msg)
+    local fmsg = {}
+    for x, l in ipairs(msg.message) do
+        if msg.role == "user" then
+            if x == 1 then
+                table.insert(fmsg, "┍ User")
+            end
+            table.insert(fmsg,  "│ " .. l)
+        else
+            if x == 1 then
+                table.insert(fmsg, "┍ Assistant")
+            end
+            table.insert(fmsg, "│ " .. l)
+        end
+    end
+    table.insert(fmsg, "┕")
+    -- table.insert(fmsg, "")
+    return fmsg
+end
+
+function M.highlight(bufnr)
+
+    local ctx = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+    local crole = ""
+    local lbegin = false
+    for l, msg in ipairs(ctx) do
+        lbegin = false
+        if string.starts(msg, "┍ User") then
+            crole = "user"
+            lbegin = true
+        end
+        if string.starts(msg, "┍ Assistant") then
+            crole = "assistant"
+            lbegin = true
+        end
+        print("->",l, crole, msg)
+
+        local endcol = 2
+        if lbegin then
+            endcol = #msg
+        end
+
+        local hash_color = M.get_color(crole)
+        vim.api.nvim_buf_set_extmark(bufnr, ns, l - 1, 0, {
+            end_col = endcol,
+            hl_group = hash_color,
+        }) 
+    end
+
+end
+
+
+function M.get_color(role)
+  if colors_cache[role] then
+    return colors_cache[role]
+  end
+
+  local hl_name = string.format('AssistantBlameColor.%s', role)
+  vim.api.nvim_set_hl(0, hl_name, { fg = colors[role] })
+  colors_cache[role] = hl_name
+
+  return hl_name
+end
+
+function string.starts(str, start)
+    return string.sub(str, 1, #start) == start
 end
 
 return M
