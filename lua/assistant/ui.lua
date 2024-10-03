@@ -19,21 +19,24 @@ local colors_cache = {} --- @type table<integer,string>
 
 local ns = vim.api.nvim_create_namespace('assistant_blocks')
 
+local model = ""
+
 ---@class UI
 local M = {}
 
+function M.set_model(cmodel)
+    model = cmodel
+end
+
 -- Opens a floating window with a new buffer, returning the buffer and window IDs.
 function M.open_chat(bufnr_chat, bufnr_input, on_submit)
-
-    local prompt = "> "
-
     local popup_chat = Popup({
         border = {
             style = "rounded",
-            text = {
-                top = "",
-                top_align = "left",
-            },
+            -- text = {
+            --     top = "",
+            --     top_align = "left",
+            -- },
         },
         focusable = true,
         buf_options = {
@@ -55,8 +58,8 @@ function M.open_chat(bufnr_chat, bufnr_input, on_submit)
         border = {
             style = "rounded",
             text = {
-                top = "",
-                top_align = "left",
+                bottom = " Send:S+Enter ",
+                bottom_align = "right",
             },
         },
         bufnr = bufnr_input,
@@ -136,7 +139,7 @@ function M.format_message(msg)
             table.insert(fmsg,  "│ " .. l)
         else
             if x == 1 then
-                table.insert(fmsg, "┍ Assistant")
+                table.insert(fmsg, "┍ Assistant: " .. model)
             end
             table.insert(fmsg, "│ " .. l)
         end
@@ -161,7 +164,6 @@ function M.highlight(bufnr)
             crole = "assistant"
             lbegin = true
         end
-        print("->",l, crole, msg)
 
         local endcol = 2
         if lbegin then

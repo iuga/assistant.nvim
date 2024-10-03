@@ -19,6 +19,7 @@ end
 
 ---@type Config
 M.config = M.default_config()
+ui.set_model(M.config['model'])
 
 ---@type Table
 ---@example [{role = "assistant", message = "..."},...]
@@ -65,6 +66,7 @@ function M.choose_model()
 			return
 		end
 		M.config.model = selected
+        ui.set_model(selected)
 		vim.api.nvim_notify(("Selected model '%s'"):format(selected), vim.log.levels.INFO, { title = "Ollama" })
 	end)
 end
@@ -123,6 +125,7 @@ end
 function M.flush_history(bufnr)
     local ctx = ui.format_conversation(M.history)
     vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, ctx)
+    ui.highlight(bufnr)
 end
 
 function M.set_bufnr_options(bufnr)
